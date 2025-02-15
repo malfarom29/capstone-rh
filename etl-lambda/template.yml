@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Lambda application that runs a ETL process to populate a dashboard.
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LambdaExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaBasicExecution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: AWSLambda_ReadOnlyAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource: ['*']
+        - PolicyName: AWSXrayWriteOnlyAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: ['*']
+        - PolicyName: EC2Permissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:CreateNetworkInterface
+                  - ec2:AttachNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - autoscaling:CompleteLifecycleAction
+                  - ec2:DeleteNetworkInterface
+                Resource: '*'
+
+  FilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: capstone-rh-dashboard-bucket-prod
+
+  S3VPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      ServiceName: com.amazonaws.us-east-1.s3
+      VpcId: vpc-0355d94cb1a63f67c
+      VpcEndpointType: Gateway
+      RouteTableIds: 
+        - rtb-0b0e78eae69cc2a25
+        - rtb-03e722c7e68d1dc86
+
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: capstone-rh-function
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.11
+      CodeUri: capstone_rh_function/.
+      Description: Call the AWS Lambda API
+      Timeout: 10
+      # Function's execution role
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Tracing: Active
+      Layers:
+        - !Ref Libs
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-07ea2722b866127d5
+        SubnetIds:
+          - subnet-04a021ff78613874a
+          - subnet-0334d8ff1aaf7ce7c
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/capstone-rh-function
+      RetentionInDays: 14
+
+  Libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: capstone-rh-etl-lib
+      Description: Dependencies for the capstone-rh-etl-lib script.
+      ContentUri: ../package/.
+      CompatibleRuntimes:
+        - python3.11
+
+  FunctionTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: default
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - Object Created
+      Targets:
+        - Id: FunctionTarget
+          Arn: !GetAtt Function.Arn
