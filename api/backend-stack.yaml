@@ -36,6 +36,10 @@ Parameters:
     Type: String
     Description: Name of the VPC
 
+  CertificateArn:
+    Type: String
+    Description: ARN of the SSL/TLS certificate in AWS Certificate Manager (ACM)
+
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -126,6 +130,92 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref RouteTable
   
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Application Load Balancer
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${MyProjectName}-alb
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${MyProjectName}-alb
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: '443'
+            Host: '#{host}'
+            Path: '/#{path}'
+            Query: '#{query}'
+            StatusCode: HTTP_301
+
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            ContentType: text/plain
+            MessageBody: "No routes configured"
+            StatusCode: '404'
+
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${MyProjectName}-tg
+      Port: 3000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Tags:
+        - Key: Name
+          Value: !Sub ${MyProjectName}-tg
+
   ECSSegurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -143,7 +233,10 @@ Resources:
         - IpProtocol: tcp
           FromPort: '3000'
           ToPort: '3000'
-          CidrIp: 10.32.0.0/16
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
 
   BastionHostSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -442,3 +535,15 @@ Outputs:
   RDSProxyEndpoint:
     Description: Endpoint of the RDS Proxy
     Value: !GetAtt RDSProxy.Endpoint
+  LoadBalancerDNS:
+    Description: DNS name of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  LoadBalancerURL:
+    Description: URL of the Application Load Balancer
+    Value: !Sub http://${ApplicationLoadBalancer.DNSName}
+  TargetGroupArn:
+    Description: ARN of the Target Group
+    Value: !Ref ALBTargetGroup
+  LoadBalancerHTTPSURL:
+    Description: HTTPS URL of the Application Load Balancer
+    Value: !Sub https://${ApplicationLoadBalancer.DNSName}
