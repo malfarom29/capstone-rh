@@ -228,7 +228,7 @@ Resources:
         - !Ref RDSSecurityGroup
       DBSubnetGroupName: !Ref RDSSubnetGroup
       PubliclyAccessible: false
-      MultiAZ: false
+      MultiAZ: true
       Tags:
         - Key: Name
           Value: !Sub ${MyProjectName}-rds-instance
@@ -365,6 +365,73 @@ Resources:
     Properties:
       BucketName: !Sub ${MyProjectName}-api-bucket
 
+  RDSProxySecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS Proxy
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ECSSegurityGroup
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref BastionHostSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  RDSProxyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: rds.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSRDSProxyServiceRole
+
+  RDSProxySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub ${MyProjectName}-rds-proxy-secret
+      SecretString: !Sub '{"username":"${MyDatabaseUser}","password":"${MyDatabasePassword}"}'
+
+  RDSProxy:
+    Type: AWS::RDS::DBProxy
+    Properties:
+      DBProxyName: !Sub ${MyProjectName}-rds-proxy
+      EngineFamily: POSTGRESQL
+      RoleArn: !GetAtt RDSProxyRole.Arn
+      Auth:
+        - AuthScheme: SECRETS
+          IAMAuth: DISABLED
+          SecretArn: !Ref RDSProxySecret
+      VpcSubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      VpcSecurityGroupIds:
+        - !Ref RDSProxySecurityGroup
+      RequireTLS: true
+      IdleClientTimeout: 1800
+
+  RDSProxyTargetGroup:
+    Type: AWS::RDS::DBProxyTargetGroup
+    Properties:
+      DBProxyName: !Ref RDSProxy
+      TargetGroupName: default
+      ConnectionPoolConfigurationInfo:
+        MaxConnectionsPercent: 100
+        MaxIdleConnectionsPercent: 50
+        ConnectionBorrowTimeout: 120
+      DBInstanceIdentifiers:
+        - !Ref RDSInstance
+
 Outputs:
   ECSCluster:
     Description: The created cluster.
@@ -372,3 +439,6 @@ Outputs:
   RDSInstanceEndpoint:
     Description: Endpoint of the RDS instance
     Value: !GetAtt RDSInstance.Endpoint.Address
+  RDSProxyEndpoint:
+    Description: Endpoint of the RDS Proxy
+    Value: !GetAtt RDSProxy.Endpoint
