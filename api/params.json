@@ -1,0 +1,56 @@
+[
+    {
+    "ParameterKey": "MyProjectName",
+    "ParameterValue": "capstone-grupo-2-vms"
+    },
+    {
+    "ParameterKey": "MyIPAddress", 
+    "ParameterValue": "201.229.175.245/32"
+    },
+    {
+    "ParameterKey": "MyDatabaseName",
+    "ParameterValue": "capstone-grupo-2-vms"
+    },
+    {
+    "ParameterKey": "MyDatabaseUser",
+    "ParameterValue": "capstone-grupo-2-user"
+    },
+    {
+    "ParameterKey": "MyDatabasePassword",
+    "ParameterValue": "F5LkD7P:fqEC>Y~zK{]?cB"
+    },
+    {
+    "ParameterKey": "SSHKeyName",
+    "ParameterValue": "capstone-grupo-2-vms"
+    },
+    {
+    "ParameterKey": "LatestECSOptimizedAMI",
+    "ParameterValue": "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id"
+    },
+    {
+    "ParameterKey": "VPCName",
+    "ParameterValue": "capstone-grupo-2-vpc"
+    },
+    {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+    },
+    {
+    "ParameterKey": "ECSInstanceType",
+    "ParameterValue": "t2.small"
+    },
+    {
+    "ParameterKey": "RDSInstanceType",
+    "ParameterValue": "0.5-1"
+    },
+    {
+    "ParameterKey": "BackupRetentionPeriod",
+    "ParameterValue": "7"
+    },
+    {
+    "ParameterKey": "EnableSpotInstances",
+    "ParameterValue": "false"
+    }
+]
+
+

@@ -22,6 +22,7 @@ Parameters:
   MyDatabasePassword:
     Description: Password for the database
     Type: String
+    NoEcho: true
 
   SSHKeyName:
     Type: String
@@ -36,9 +37,9 @@ Parameters:
     Type: String
     Description: Name of the VPC
 
-  CertificateArn:
-    Type: String
-    Description: ARN of the SSL/TLS certificate in AWS Certificate Manager (ACM)
+  # CertificateArn:
+  #   Type: String
+  #   Description: ARN of the SSL/TLS certificate in AWS Certificate Manager (ACM)
 
   Environment:
     Type: String
@@ -137,7 +138,7 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.32.1.0/24
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       AvailabilityZone: us-east-1a
       Tags:
         - Key: Name
@@ -148,8 +149,9 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: 10.32.3.0/24
-      MapPublicIpOnLaunch: true
+      MapPublicIpOnLaunch: false
       AvailabilityZone: us-east-1b
+
       Tags:
         - Key: Name
           Value: !Sub ${MyProjectName}-public-subnet-1b
@@ -183,8 +185,9 @@ Resources:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
+      DestinationCidrBlock: <Use a restricted IP range here>
       GatewayId: !Ref InternetGateway
+
 
   PublicSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -255,21 +258,21 @@ Resources:
             Query: '#{query}'
             StatusCode: HTTP_301
 
-  HTTPSListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      Certificates:
-        - CertificateArn: !Ref CertificateArn
-      SslPolicy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06
-      DefaultActions:
-        - Type: fixed-response
-          FixedResponseConfig:
-            ContentType: text/plain
-            MessageBody: "No routes configured"
-            StatusCode: '404'
+  # HTTPSListener:
+  #   Type: AWS::ElasticLoadBalancingV2::Listener
+  #   Properties:
+  #     LoadBalancerArn: !Ref ApplicationLoadBalancer
+  #     Port: 443
+  #     Protocol: HTTPS
+  #     Certificates:
+  #       - CertificateArn: !Ref CertificateArn
+  #     SslPolicy: ELBSecurityPolicy-TLS-1-2-Ext-2018-06
+  #     DefaultActions:
+  #       - Type: fixed-response
+  #         FixedResponseConfig:
+  #           ContentType: text/plain
+  #           MessageBody: "No routes configured"
+  #           StatusCode: '404'
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -459,7 +462,7 @@ Resources:
       LaunchTemplateData:
         ImageId: !Ref LatestECSOptimizedAMI
         NetworkInterfaces:
-          - AssociatePublicIpAddress: true
+          - AssociatePublicIpAddress: false
             DeviceIndex: 0
             DeleteOnTermination: true
             Groups:
@@ -495,6 +498,7 @@ Resources:
             - ' - '
             - - ECS Instance
               - !Sub ${MyProjectName}-ecs-instance
+      HealthCheckType: ELB
 
   ECSCluster:
     Type: AWS::ECS::Cluster
@@ -740,10 +744,19 @@ Resources:
             SampledRequestsEnabled: true
             CloudWatchMetricsEnabled: true
             MetricName: AWSManagedRulesCommonRuleSetMetric
+        - Name: AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 2
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
       VisibilityConfig:
         SampledRequestsEnabled: true
         CloudWatchMetricsEnabled: true
         MetricName: !Sub ${MyProjectName}-waf-metric
+
 
   WAFWebACLAssociation:
     Type: AWS::WAFv2::WebACLAssociation
@@ -783,8 +796,6 @@ Resources:
           Value: !Ref MyProjectName
         - Key: ManagedBy
           Value: CloudFormation
-        - Key: LastUpdated
-          Value: !Ref 'AWS::StackLastUpdatedTime'
 
   AutoScalingRole:
     Type: AWS::IAM::Role
