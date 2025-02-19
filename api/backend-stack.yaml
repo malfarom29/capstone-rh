@@ -24,9 +24,9 @@ Parameters:
     Type: String
     NoEcho: true
 
-  SSHKeyName:
-    Type: String
-    Description: Name of the SSH key
+  # SSHKeyName:
+  #   Type: String
+  #   Description: Name of the SSH key
 
   LatestECSOptimizedAMI:
     Description: AMI ID
@@ -336,6 +336,12 @@ Resources:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
 
+  SSHKeyPair:
+    Type: 'AWS::EC2::KeyPair'
+    Properties:
+      KeyName: MyKeyPair
+      KeyType: 'ed25519'
+
   BastionHost:
     Type: AWS::EC2::Instance
     Properties:
@@ -343,7 +349,7 @@ Resources:
       InstanceType: t2.micro
       SubnetId: !Ref PublicSubnet1
       SecurityGroupIds: [!Ref BastionHostSecurityGroup]
-      KeyName: !Ref SSHKeyName
+      KeyName: !Ref SSHKeyPair
       Tags:
         - Key: Name
           Value: !Sub ${MyProjectName}-bastion-host
@@ -478,7 +484,7 @@ Resources:
             Groups:
               - !Ref ECSSecurityGroup
         InstanceType: !Ref ECSInstanceType
-        KeyName: !Ref SSHKeyName
+        KeyName: !Ref SSHKeyPair
         IamInstanceProfile:
           Name: !Ref ECSInstanceProfile
         UserData: !Base64
@@ -604,8 +610,16 @@ Resources:
             Principal:
               Service: rds.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSRDSProxyServiceRole
+      Policies:
+        - PolicyName: !Sub ${MyProjectName}-rds-proxy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:GetSecretValue'
+                Resource: 
+                  - !Ref RDSProxySecret
 
   RDSProxySecret:
     Type: AWS::SecretsManager::Secret
@@ -726,6 +740,7 @@ Resources:
 
   ECSAutoScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: ECSService
     Properties:
       MaxCapacity: 4
       MinCapacity: 1
@@ -763,6 +778,10 @@ Resources:
               Name: AWSManagedRulesKnownBadInputsRuleSet
           OverrideAction:
             None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: AWSManagedRulesKnownBadInputsRuleSet
       VisibilityConfig:
         SampledRequestsEnabled: true
         CloudWatchMetricsEnabled: true
@@ -914,3 +933,9 @@ Outputs:
   ECRRepositoryWorker:
     Description: ECR Repository URL for Worker
     Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${WorkerECR}
+  BastionHostPublicIP:
+    Description: Public IP of the Bastion Host
+    Value: !GetAtt BastionHost.PublicIp
+  SSHKeyPair:
+    Description: Name of the Bastion Host SSH key
+    Value: !GetAtt SSHKeyPair.KeyFingerprint

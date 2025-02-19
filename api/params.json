@@ -20,10 +20,6 @@
     "ParameterValue": "F5LkD7P:fqEC>Y~zK{]?cB"
     },
     {
-    "ParameterKey": "SSHKeyName",
-    "ParameterValue": "capstone-grupo-2-vms"
-    },
-    {
     "ParameterKey": "LatestECSOptimizedAMI",
     "ParameterValue": "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id"
     },
