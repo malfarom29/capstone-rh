@@ -1,0 +1,25 @@
+services:
+  api:
+    build:
+      context: .
+      target: deps
+    volumes:
+      - .:/app/tmp
+    ports:
+      - '${PORT}:${PORT}'
+    command: npm run start:dev
+    env_file:
+      - .env
+  # worker:
+  #   build:
+  #     context: workers/report-filler/.
+  #     target: tmp
+  #   command: npm run build && npm start
+  #   volumes:
+  #     - ./workers/report-filler:/app/tmp
+  #   env_file:
+  #     - .env
+  #   tty: true
+  #   stdin_open: true
+  #   cpu_quota: 50000
+  #   mem_reservation: 1g
