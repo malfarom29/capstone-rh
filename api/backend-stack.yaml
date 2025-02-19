@@ -406,12 +406,10 @@ Resources:
       DatabaseName: !Ref MyDatabaseName
       MasterUsername: !Ref MyDatabaseUser
       MasterUserPassword: !Ref MyDatabasePassword
-      VpcSecurityGroups:
-        - !Ref RDSSecurityGroup
+      VpcSecurityGroupIds: 
+        - !GetAtt RDSSecurityGroup.GroupId
       DBSubnetGroupName: !Ref RDSSubnetGroup
-      PubliclyAccessible: false
       BackupRetentionPeriod: !FindInMap [EnvironmentConfig, !Ref Environment, BackupRetention]
-      DeletionProtection: true
       StorageEncrypted: true
       CopyTagsToSnapshot: true
       EnableCloudwatchLogsExports:
@@ -889,6 +887,12 @@ Resources:
     Properties:
       LogGroupName: !Sub /ecs/${MyProjectName}
       RetentionInDays: 30
+
+  RDSServiceLinkedRole:
+    Type: AWS::IAM::ServiceLinkedRole
+    Properties:
+      AWSServiceName: rds.amazonaws.com
+      Description: Role for RDS to access other AWS services on your behalf
 
 Outputs:
   ECSCluster:
