@@ -86,6 +86,24 @@ aws cloudformation create-stack \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
+## Testing
+
+# Create a change set without executing it for Main Stack with Aurora serverless v2
+```bash
+aws cloudformation create-change-set --stack-name capstone-grupo-2 --template-body file://api/backend-stack.yaml --parameters file://api/params.json --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name validation-test --change-set-type CREATE
+```
+
+# Main Stack with RDS
+```bash
+aws cloudformation create-change-set --stack-name capstone-grupo-2-with-rds --template-body file://api/backend-stack-with-rds.yaml --parameters file://api/params-with-rds.json --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name validation-test-with-rds --change-set-type CREATE
+```
+
+# Get the estimated cost
+```bash
+aws cloudformation estimate-template-cost --template-body file://backend-stack.yaml --parameters file://params.json
+```
+
+
 ## Infrastructure Diagram
 
 ```mermaid
