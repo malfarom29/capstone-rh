@@ -9,7 +9,7 @@
     },
     {
     "ParameterKey": "MyDatabaseName",
-    "ParameterValue": "capstone-grupo-2-vms"
+    "ParameterValue": "capstoneGrupo2VMS"
     },
     {
     "ParameterKey": "MyDatabaseUser",

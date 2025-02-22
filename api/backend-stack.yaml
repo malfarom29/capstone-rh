@@ -256,14 +256,8 @@ Resources:
       Port: 80
       Protocol: HTTP
       DefaultActions:
-        - Type: redirect
-          RedirectConfig:
-            Protocol: HTTPS
-            Port: '443'
-            Host: '#{host}'
-            Path: '/#{path}'
-            Query: '#{query}'
-            StatusCode: HTTP_301
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
 
   # HTTPSListener:
   #   Type: AWS::ElasticLoadBalancingV2::Listener
@@ -288,6 +282,7 @@ Resources:
       Port: 3000
       Protocol: HTTP
       VpcId: !Ref VPC
+      TargetType: ip
       HealthCheckPath: /health
       HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 5
@@ -414,7 +409,6 @@ Resources:
       CopyTagsToSnapshot: true
       EnableCloudwatchLogsExports:
         - postgresql
-        - upgrade
       ServerlessV2ScalingConfiguration:
         MinCapacity: !Select [0, !Split ['-', !Ref RDSInstanceType]]
         MaxCapacity: !Select [1, !Split ['-', !Ref RDSInstanceType]]
@@ -681,17 +675,10 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: delivery.logs.amazonaws.com
+              AWS: arn:aws:iam::127311923021:root
             Action: 's3:PutObject'
             Resource: !Sub '${ALBLogsBucket.Arn}/*'
-            Condition:
-              StringEquals:
-                's3:x-amz-acl': 'bucket-owner-full-control'
-          - Effect: Allow
-            Principal:
-              Service: delivery.logs.amazonaws.com
-            Action: 's3:GetBucketAcl'
-            Resource: !Ref ALBLogsBucket
+
 
   RDSMonitoringRole:
     Type: AWS::IAM::Role
@@ -789,8 +776,8 @@ Resources:
   WAFWebACLAssociation:
     Type: AWS::WAFv2::WebACLAssociation
     Properties:
-      ResourceArn: !Ref ApplicationLoadBalancer
-      WebACLArn: !Ref WAFWebACL
+      ResourceArn: !GetAtt ApplicationLoadBalancer.LoadBalancerArn
+      WebACLArn: !GetAtt  WAFWebACL.Arn
 
   HighCPUAlarm:
     Type: AWS::CloudWatch::Alarm

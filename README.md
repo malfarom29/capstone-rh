@@ -7,10 +7,15 @@ This repository contains CloudFormation templates for deploying a scalable, secu
 ```
 .
 ├── api/
-│   ├── backend-stack.yaml        # Main infrastructure stack
-│   └── backend-stack-with-rds.yaml  # Legacy RDS stack (deprecated)
+│   ├── backend-stack.yaml        # Main infrastructure stack with Aurora Serverless v2
+│   ├── backend-stack-with-rds.yaml  # Infrastructure stack with RDS instance
+│   ├── params.json               # Parameters for main infrastructure stack
+│   └── params-with-rds.json      # Parameters for infrastructure stack with RDS instance
 ├── etl-lambda/
-│   └── template.yml             # ETL Lambda infrastructure
+│   ├── build-layer.sh            # Script to build Lambda layer
+│   ├── create-bucket.sh          # Script to create S3 buckets
+│   ├── deploy.sh                 # Script to deploy Lambda function
+│   └── template.yml              # ETL Lambda infrastructure
 └── README.md
 ```
 
@@ -24,7 +29,8 @@ This repository contains CloudFormation templates for deploying a scalable, secu
 - S3 buckets for ALB logs and API storage
 
 ### Database
-- Aurora PostgreSQL Serverless v2
+- Aurora PostgreSQL Serverless v2 (main stack)
+- RDS instance (legacy stack)
 - RDS Proxy for connection pooling
 - Enhanced monitoring and performance insights
 - Automated backups and encryption
@@ -56,8 +62,8 @@ Key parameters that need to be configured:
 - `MyProjectName`: Name of your project
 - `Environment`: Deployment environment (dev/staging/prod)
 - `MyIPAddress`: IP address for SSH access
-- `CertificateArn`: SSL certificate ARN
-- `RDSInstanceType`: Aurora capacity range (ACUs)
+- `CertificateArn`: SSL certificate ARN (if using HTTPS)
+- `RDSInstanceType`: Aurora capacity range (ACUs) or RDS instance type
 - Database credentials:
   - `MyDatabaseName`
   - `MyDatabaseUser`
@@ -82,27 +88,26 @@ Key parameters that need to be configured:
 aws cloudformation create-stack \
   --stack-name your-stack-name \
   --template-body file://api/backend-stack.yaml \
-  --parameters file://parameters.json \
+  --parameters file://api/params.json \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
 ## Testing
 
-# Create a change set without executing it for Main Stack with Aurora serverless v2
+### Create a change set without executing it for Main Stack with Aurora Serverless v2
 ```bash
 aws cloudformation create-change-set --stack-name capstone-grupo-2 --template-body file://api/backend-stack.yaml --parameters file://api/params.json --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name validation-test --change-set-type CREATE
 ```
 
-# Main Stack with RDS
+### Main Stack with RDS
 ```bash
 aws cloudformation create-change-set --stack-name capstone-grupo-2-with-rds --template-body file://api/backend-stack-with-rds.yaml --parameters file://api/params-with-rds.json --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name validation-test-with-rds --change-set-type CREATE
 ```
 
-# Get the estimated cost
+### Get the estimated cost
 ```bash
-aws cloudformation estimate-template-cost --template-body file://backend-stack.yaml --parameters file://params.json
+aws cloudformation estimate-template-cost --template-body file://api/backend-stack.yaml --parameters file://api/params.json
 ```
-
 
 ## Infrastructure Diagram
 
