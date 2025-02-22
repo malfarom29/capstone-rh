@@ -40,6 +40,11 @@ This repository contains CloudFormation templates for deploying a scalable, secu
 - Auto Scaling configuration
 - Spot Instance support (optional)
 - Bastion host for secure access
+- Lambda for ETL process
+
+### Integration
+- SQS queue for job processing
+- SQS deadletter queue for messages that can't be processed successfully
 
 ### Security
 - Security Groups for all components
@@ -47,13 +52,13 @@ This repository contains CloudFormation templates for deploying a scalable, secu
 - WAF rules for application protection
 - Private subnets for sensitive resources
 - Secrets management for database credentials
+- SSH key pair for EC2 instances
 
 ## Prerequisites
 
 - AWS CLI installed and configured
 - Appropriate AWS permissions
 - SSL/TLS certificate in AWS Certificate Manager
-- SSH key pair for EC2 instances
 
 ## Deployment Parameters
 
@@ -89,19 +94,31 @@ aws cloudformation create-stack \
   --stack-name your-stack-name \
   --template-body file://api/backend-stack.yaml \
   --parameters file://api/params.json \
-  --capabilities CAPABILITY_NAMED_IAM
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
 ## Testing
 
 ### Create a change set without executing it for Main Stack with Aurora Serverless v2
 ```bash
-aws cloudformation create-change-set --stack-name capstone-grupo-2 --template-body file://api/backend-stack.yaml --parameters file://api/params.json --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name validation-test --change-set-type CREATE
+aws cloudformation create-change-set \
+  --stack-name capstone-grupo-2 \
+  --template-body file://api/backend-stack.yaml \
+  --parameters file://api/params.json \
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+  --change-set-name validation-test \
+  --change-set-type CREATE
 ```
 
 ### Main Stack with RDS
 ```bash
-aws cloudformation create-change-set --stack-name capstone-grupo-2-with-rds --template-body file://api/backend-stack-with-rds.yaml --parameters file://api/params-with-rds.json --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --change-set-name validation-test-with-rds --change-set-type CREATE
+aws cloudformation create-change-set \
+  --stack-name capstone-grupo-2-with-rds \
+  --template-body file://api/backend-stack-with-rds.yaml \
+  --parameters file://api/params-with-rds.json \
+  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+  --change-set-name validation-test-with-rds \
+  --change-set-type CREATE
 ```
 
 ### Get the estimated cost
@@ -117,6 +134,9 @@ graph TD
     ALB --> WAF[WAF]
     ALB --> ECS[ECS Cluster]
     ECS --> RDSProxy[RDS Proxy]
+    ECS --> Lambda[ETL Lambda]
+    Lambda --> SQS[Job Queue]
+    SQS --> S3 [Reports]
     RDSProxy --> Aurora[Aurora PostgreSQL]
     Bastion[Bastion Host] --> RDSProxy
 ```

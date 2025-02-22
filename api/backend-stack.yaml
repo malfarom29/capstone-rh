@@ -881,6 +881,22 @@ Resources:
       AWSServiceName: rds.amazonaws.com
       Description: Role for RDS to access other AWS services on your behalf
 
+  MyDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${MyProjectName}-dlq
+      MessageRetentionPeriod: 1209600 # 14 days
+
+  MySQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${MyProjectName}-queue
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 345600 # 4 days
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt MyDeadLetterQueue.Arn
+        maxReceiveCount: 5
+
 Outputs:
   ECSCluster:
     Description: The created cluster.
@@ -930,3 +946,15 @@ Outputs:
   SSHKeyPair:
     Description: Name of the Bastion Host SSH key
     Value: !GetAtt SSHKeyPair.KeyFingerprint
+  SQSQueueURL:
+    Description: URL of the SQS Queue
+    Value: !Ref MySQSQueue
+  SQSQueueARN:
+    Description: ARN of the SQS Queue
+    Value: !GetAtt MySQSQueue.Arn
+  DeadLetterQueueURL:
+    Description: URL of the Dead Letter Queue
+    Value: !Ref MyDeadLetterQueue
+  DeadLetterQueueARN:
+    Description: ARN of the Dead Letter Queue
+    Value: !GetAtt MyDeadLetterQueue.Arn
