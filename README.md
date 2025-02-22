@@ -136,7 +136,7 @@ graph TD
     ECS --> RDSProxy[RDS Proxy]
     ECS --> Lambda[ETL Lambda]
     Lambda --> SQS[Job Queue]
-    SQS --> S3 [Reports]
+    SQS --> S3[Reports]
     RDSProxy --> Aurora[Aurora PostgreSQL]
     Bastion[Bastion Host] --> RDSProxy
 ```
