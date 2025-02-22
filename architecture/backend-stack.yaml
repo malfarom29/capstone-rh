@@ -21,6 +21,7 @@ Parameters:
 
   MyDatabasePassword:
     Description: Password for the database
+    NoEcho: true
     Type: String
 
   SSHKeyName:
@@ -107,6 +108,11 @@ Resources:
     Properties:
       VpcId: !Ref VPC
 
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
   PublicRoute:
     Type: AWS::EC2::Route
     Properties:
@@ -125,7 +131,19 @@ Resources:
     Properties:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref RouteTable
-  
+
+  PrivateRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
   ECSSegurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -233,46 +251,46 @@ Resources:
         - Key: Name
           Value: !Sub ${MyProjectName}-rds-instance
 
-  ECSInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
-      Policies:
-        - PolicyName: ECSInstanceRolePolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ecs:CreateCluster
-                  - ecs:DeregisterContainerInstance
-                  - ecs:DiscoverPollEndpoint
-                  - ecs:Poll
-                  - ecs:RegisterContainerInstance
-                  - ecs:StartTelemetrySession
-                  - ecs:Submit*
-                  - ecr:GetAuthorizationToken
-                  - ecr:BatchCheckLayerAvailability
-                  - ecr:GetDownloadUrlForLayer
-                  - ecr:BatchGetImage
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: '*'
+  # ECSInstanceRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: ec2.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+  #     Policies:
+  #       - PolicyName: ECSInstanceRolePolicy
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - ecs:CreateCluster
+  #                 - ecs:DeregisterContainerInstance
+  #                 - ecs:DiscoverPollEndpoint
+  #                 - ecs:Poll
+  #                 - ecs:RegisterContainerInstance
+  #                 - ecs:StartTelemetrySession
+  #                 - ecs:Submit*
+  #                 - ecr:GetAuthorizationToken
+  #                 - ecr:BatchCheckLayerAvailability
+  #                 - ecr:GetDownloadUrlForLayer
+  #                 - ecr:BatchGetImage
+  #                 - logs:CreateLogStream
+  #                 - logs:PutLogEvents
+  #               Resource: '*'
 
-  ECSInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles:
-        - !Ref ECSInstanceRole
+  # ECSInstanceProfile:
+  #   Type: AWS::IAM::InstanceProfile
+  #   Properties:
+  #     Path: /
+  #     Roles:
+  #       - !Ref AWSServiceRoleForECS
 
   ECSLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -289,7 +307,7 @@ Resources:
         InstanceType: t2.small
         KeyName: !Ref SSHKeyName
         IamInstanceProfile:
-          Name: !Ref ECSInstanceProfile
+          Name: LabInstanceProfile
         UserData: !Base64
           Fn::Sub:
             - |-
@@ -363,7 +381,7 @@ Resources:
   APIBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${MyProjectName}-api-bucket
+      BucketName: !Sub ${MyProjectName}-lab-api-bucket
 
 Outputs:
   ECSCluster:
@@ -372,3 +390,33 @@ Outputs:
   RDSInstanceEndpoint:
     Description: Endpoint of the RDS instance
     Value: !GetAtt RDSInstance.Endpoint.Address
+  VPCId:
+    Description: ID of the VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${MyProjectName}-vpc-id
+  PrivateSubnet1Id:
+    Description: ID of the private subnet 1
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub ${MyProjectName}-private-subnet-1a-id
+  PrivateSubnet2Id:
+    Description: ID of the private subnet 2
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub ${MyProjectName}-private-subnet-1b-id
+  ECSSecurityGroupId:
+    Description: ID of the ECS security group
+    Value: !Ref ECSSegurityGroup
+    Export:
+      Name: !Sub ${MyProjectName}-ecs-security-group-id
+  PublicRouteTableId:
+    Description: ID of the public route table
+    Value: !Ref RouteTable
+    Export:
+      Name: !Sub ${MyProjectName}-public-rtb-id
+  PrivateRouteTableId:
+    Description: ID of the private route table
+    Value: !Ref PrivateRouteTable
+    Export:
+      Name: !Sub ${MyProjectName}-private-rtb-id

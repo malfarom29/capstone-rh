@@ -1,46 +1,52 @@
-FROM node:bullseye-slim as deps
+FROM node:lts-alpine AS base
 
-RUN apt update && apt-get install -y bash jq
-RUN npm install -g @nestjs/cli
+RUN apk add --no-cache openssl
 
 WORKDIR /tmp
 
-COPY package*.json ./
+COPY package.json yarn.lock ./
 
-# FROM node:bullseye-slim as tmp
+FROM node:lts-alpine as tmp
 
-# RUN apt-get update && apt-get install -y procps
-# RUN npm install -g @nestjs/cli
+ARG NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_OPTIONS=${NODE_OPTIONS}
 
-# WORKDIR /app/tmp
+RUN apk update 
+RUN apk add bash jq postgresql procps curl
+RUN npm install -g @nestjs/cli
+RUN apk add --no-cache openssl
 
-# COPY --from=deps /tmp ./
-# COPY package-lock.json ./
+WORKDIR /app/tmp
 
-# COPY . /app/tmp/
+COPY --from=base /tmp ./
+COPY yarn.lock ./
 
-# RUN npm install
+COPY . /app/tmp/
 
-# RUN npm run build
+RUN yarn install
+RUN yarn prisma generate && yarn build
 
-# RUN true \
-#     && rm -rf ./src
+RUN true \
+    && rm -rf ./src
 
-# RUN true \
-#   && npm prune --omit=dev --omit-peer
+RUN true \
+  && yarn --ignore-scripts --production=false
 
-# FROM node:bullseye-slim as prod
+FROM node:lts-alpine as prod
 
-# USER node
+ARG NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_OPTIONS=${NODE_OPTIONS}
 
-# WORKDIR /app/web
+RUN apk update 
+RUN apk add bash jq postgresql procps curl
+RUN apk add --no-cache openssl
 
-# COPY --from=tmp --chown=node:node /app/tmp /app/web
+USER node
 
-# RUN chmod +x /app/web/sh/entrypoint.sh
+WORKDIR /app/web
 
-# ENTRYPOINT [ "sh/entrypoint.sh" ]
+COPY --from=tmp --chown=node:node /app/tmp /app/web
 
-# EXPOSE 3000
+EXPOSE 3000
 
-# CMD [ "node", "dist/main" ]
+CMD [ "node", "dist/main" ]

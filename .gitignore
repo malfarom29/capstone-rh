@@ -1,3 +1,16 @@
-node_modules
 # Keep environment variables out of version control
+*/.env
 .env
+
+# Keep node_modules out of version control
+api/node_modules
+api/dist
+
+# Keep package out of version control
+etl-lambda/package
+etl-lambda/bucket-name.txt
+
+functions
+
+web/node_modules
+web/dist

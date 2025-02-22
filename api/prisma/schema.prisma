@@ -13,31 +13,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model IndicentTypes {
-  id        String     @id @default(uuid())
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+model IncidentType {
+  id        Int        @id @default(autoincrement())
+  name      String     @map("name")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at")
   Incident  Incident[]
 
-  @@map("indicent_types")
+  @@map("incident_types")
 }
 
 model Country {
-  id        String   @id @default(uuid())
-  name      String
-  iso2      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String   @map("name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   City      City[]
 
   @@map("countries")
 }
 
 model City {
-  id        String     @id @default(uuid())
+  id        Int        @id @default(autoincrement())
   name      String
-  countryId String
+  countryId Int        @map("country_id")
   country   Country    @relation(fields: [countryId], references: [id])
   Incident  Incident[]
 
@@ -45,7 +44,7 @@ model City {
 }
 
 model Location {
-  id       String     @id @default(uuid())
+  id       Int        @id @default(autoincrement())
   name     String
   Incident Incident[]
 
@@ -53,20 +52,20 @@ model Location {
 }
 
 model Incident {
-  id             String   @id @default(uuid())
-  incidentTypeId String   @map("incident_type_id")
-  cityId         String   @map("city_id")
-  locationId     String   @map("location_id")
+  id             Int      @id @default(autoincrement())
+  incidentTypeId Int      @map("incident_type_id")
+  cityId         Int      @map("city_id")
+  locationId     Int      @map("location_id")
   age            Int?
   gender         String?
   reportMonth    Int?     @map("report_month")
   reportYear     Int?     @map("report_year")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
-  incidentType IndicentTypes @relation(fields: [incidentTypeId], references: [id])
-  city         City          @relation(fields: [cityId], references: [id])
-  location     Location      @relation(fields: [locationId], references: [id])
+  incidentType IncidentType @relation(fields: [incidentTypeId], references: [id])
+  city         City         @relation(fields: [cityId], references: [id])
+  location     Location     @relation(fields: [locationId], references: [id])
 
   @@map("incidents")
 }

@@ -56,28 +56,23 @@ Resources:
                   - ec2:DeleteNetworkInterface
                 Resource: '*'
 
-  FilesBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: capstone-rh-dashboard-bucket-prod
-
   S3VPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties: 
       ServiceName: com.amazonaws.us-east-1.s3
-      VpcId: vpc-0355d94cb1a63f67c
+      VpcId: !ImportValue capstone-vpc-id
       VpcEndpointType: Gateway
       RouteTableIds: 
-        - rtb-0b0e78eae69cc2a25
-        - rtb-03e722c7e68d1dc86
+        - !ImportValue capstone-private-rtb-id
+        - !ImportValue capstone-public-rtb-id
 
   Function:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: capstone-rh-function
-      Handler: lambda_function.lambda_handler
+      FunctionName: capstone-rh-etl-function
+      Handler: my_function.lambda_handler
       Runtime: python3.11
-      CodeUri: capstone_rh_function/.
+      CodeUri: my_function/.
       Description: Call the AWS Lambda API
       Timeout: 10
       # Function's execution role
@@ -87,15 +82,15 @@ Resources:
         - !Ref Libs
       VpcConfig:
         SecurityGroupIds:
-          - sg-07ea2722b866127d5
+          - !ImportValue capstone-ecs-security-group-id
         SubnetIds:
-          - subnet-04a021ff78613874a
-          - subnet-0334d8ff1aaf7ce7c
+          - !ImportValue capstone-private-subnet-1a-id
+          - !ImportValue capstone-private-subnet-1b-id
 
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /aws/lambda/capstone-rh-function
+      LogGroupName: /aws/lambda/capstone-rh-etl-function
       RetentionInDays: 14
 
   Libs:
@@ -103,7 +98,7 @@ Resources:
     Properties:
       LayerName: capstone-rh-etl-lib
       Description: Dependencies for the capstone-rh-etl-lib script.
-      ContentUri: ../package/.
+      ContentUri: ./package/.
       CompatibleRuntimes:
         - python3.11
 

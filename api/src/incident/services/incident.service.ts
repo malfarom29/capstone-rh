@@ -7,6 +7,6 @@ export class IncidentService {
   constructor(private readonly prisma: PrismaService) { }
 
   async bulkInsertIncidents() {
-    return createUploadSignedUrl(`${new Date().getTime()}_report.csv`)
+    return createUploadSignedUrl(`${new Date().getTime()}_report.csv`);
   }
 }
