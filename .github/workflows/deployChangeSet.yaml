@@ -1,0 +1,131 @@
+name: Deploy Main Stack Change Set
+
+on:
+  push:
+    branches:
+      - dev
+
+  workflow_dispatch:
+    inputs:
+      stackName:
+        description: 'The name of the stack to deploy'
+        required: true
+        default: 'capstone-grupo-2'
+      myIPAddress:
+        description: 'The IP address to allow SSH access to the EC2 instances'
+        required: true
+        default: '0.0.0.0/0'
+      environment:
+        description: 'The environment to deploy the stack to'
+        type: choice
+        options: 
+            - 'dev'
+            - 'staging'
+            - 'prod'
+        required: true
+        default: 'dev'
+      ECSInstanceType:
+        type: choice
+        description: EC2 instance type for ECS hosts
+        default: t2.small
+        options:
+            - t2.small
+            - t2.medium
+            - t2.large
+            - t3.small
+            - t3.medium
+        required: true
+      RDSInstanceType:
+        type: choice
+        description: Aurora capacity range (in ACUs)
+        default: '0.5-1'
+        options:
+            - '0.5-1'
+            - '1-2'
+            - '1-4'
+            - '2-8'
+            - '4-16'
+        required: true
+      enableSpotInstances:
+        type: boolean
+        description: Enable Spot Instances for ECS
+        default: false
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Create params.json
+      run: |
+        echo '[
+          {
+            "ParameterKey": "MyProjectName",
+            "ParameterValue": "${{ secrets.MY_PROJECT_NAME }}"
+          },
+          {
+            "ParameterKey": "MyIPAddress",
+            "ParameterValue": "${{ inputs.myIPAddress }}"
+          },
+          {
+            "ParameterKey": "MyDatabaseName",
+            "ParameterValue": "${{ secrets.MY_DATABASE_NAME }}"
+          },
+          {
+            "ParameterKey": "MyDatabaseUser",
+            "ParameterValue": "${{ secrets.MY_DATABASE_USER }}"
+          },
+          {
+            "ParameterKey": "MyDatabasePassword",
+            "ParameterValue": "${{ secrets.MY_DATABASE_PASSWORD }}"
+          },
+          {
+            "ParameterKey": "LatestECSOptimizedAMI",
+            "ParameterValue": "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id"
+          },
+          {
+            "ParameterKey": "VPCName",
+            "ParameterValue": "${{ secrets.VPC_NAME }}"
+          },
+          {
+            "ParameterKey": "Environment",
+            "ParameterValue": "${{ inputs.environment }}"
+          },
+          {
+            "ParameterKey": "ECSInstanceType",
+            "ParameterValue": "${{ inputs.ECSInstanceType }}"
+          },
+          {
+            "ParameterKey": "RDSInstanceType",
+            "ParameterValue": "${{ inputs.RDSInstanceType }}"
+          },
+          {
+            "ParameterKey": "BackupRetentionPeriod",
+            "ParameterValue": "${{ secrets.BACKUP_RETENTION_PERIOD }}"
+          },
+          {
+            "ParameterKey": "EnableSpotInstances",
+            "ParameterValue": "${{ secrets.ENABLE_SPOT_INSTANCES }}"
+          }
+        ]' > api/params.json
+
+    - name: Create change set
+      run: |
+        aws cloudformation create-change-set \
+          --stack-name "${{ inputs.stackName }}" \
+          --template-body file://api/backend-stack.yaml \
+          --parameters file://api/params.json \
+          --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+          --change-set-name validation-test \
+          --change-set-type UPDATE

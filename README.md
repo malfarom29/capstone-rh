@@ -66,7 +66,7 @@ Key parameters that need to be configured:
 
 - `MyProjectName`: Name of your project
 - `Environment`: Deployment environment (dev/staging/prod)
-- `MyIPAddress`: IP address for SSH access
+- `MyIPAddress`: Whitelisted IP address for SSH access
 - `CertificateArn`: SSL certificate ARN (if using HTTPS)
 - `RDSInstanceType`: Aurora capacity range (ACUs) or RDS instance type
 - Database credentials:
@@ -123,7 +123,9 @@ aws cloudformation create-change-set \
 
 ### Get the estimated cost
 ```bash
-aws cloudformation estimate-template-cost --template-body file://api/backend-stack.yaml --parameters file://api/params.json
+aws cloudformation estimate-template-cost \
+  --template-body file://api/backend-stack.yaml \
+  --parameters file://api/params.json
 ```
 
 ## Infrastructure Diagram

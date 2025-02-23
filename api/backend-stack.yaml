@@ -342,8 +342,13 @@ Resources:
     Properties:
       ImageId: !Ref LatestECSOptimizedAMI
       InstanceType: t2.micro
-      SubnetId: !Ref PublicSubnet1
-      SecurityGroupIds: [!Ref BastionHostSecurityGroup]
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          DeleteOnTermination: 'true'
+          AssociatePublicIpAddress: 'true'
+          SubnetId: !Ref PublicSubnet1
+          GroupSet:
+            - !Ref BastionHostSecurityGroup
       KeyName: !Ref SSHKeyPair
       Tags:
         - Key: Name
@@ -834,7 +839,7 @@ Resources:
     Properties:
       ServiceName: !Sub ${MyProjectName}-service
       Cluster: !Ref ECSCluster
-      DesiredCount: 2
+      DesiredCount: 0 # Set to 2 to start the service
       LoadBalancers:
         - TargetGroupArn: !Ref ALBTargetGroup
           ContainerPort: 3000
