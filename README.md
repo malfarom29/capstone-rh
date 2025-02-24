@@ -89,12 +89,29 @@ Key parameters that need to be configured:
 ```
 
 2. Deploy the stack:
+### Deploy main backend stack
 ```bash
 aws cloudformation create-stack \
   --stack-name your-stack-name \
   --template-body file://api/backend-stack.yaml \
   --parameters file://api/params.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+```
+
+### Deploy ETL Lambda functions
+
+```bash
+# Make shell files executable
+sudo chmod +x deploy.sh build-layer.sh create-bucket.sh
+
+# Create artifacts and files bucket
+sudo ./create-bucket.sh
+
+# Build library dependencies for python
+sudo ./build-layer.sh
+
+# Deploy lambda functions dependencies
+sudo ./deploy.sh
 ```
 
 ## Testing
