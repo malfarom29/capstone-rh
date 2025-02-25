@@ -6,7 +6,7 @@ This repository contains CloudFormation templates for deploying a scalable, secu
 
 ```
 .
-├── api/
+├── backend/
 │   ├── backend-stack.yaml        # Main infrastructure stack with Aurora Serverless v2
 │   ├── backend-stack-with-rds.yaml  # Infrastructure stack with RDS instance
 │   ├── params.json               # Parameters for main infrastructure stack
@@ -93,8 +93,8 @@ Key parameters that need to be configured:
 ```bash
 aws cloudformation create-stack \
   --stack-name your-stack-name \
-  --template-body file://api/backend-stack.yaml \
-  --parameters file://api/params.json \
+  --template-body file://backend/backend-stack.yaml \
+  --parameters file://backend/params.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 ```
 
@@ -105,13 +105,13 @@ aws cloudformation create-stack \
 sudo chmod +x deploy.sh build-layer.sh create-bucket.sh
 
 # Create artifacts and files bucket
-sudo ./create-bucket.sh
+sudo ./etl-lambda/create-bucket.sh
 
 # Build library dependencies for python
-sudo ./build-layer.sh
+sudo ./etl-lambda/build-layer.sh
 
 # Deploy lambda functions dependencies
-sudo ./deploy.sh
+sudo ./etl-lambda/deploy.sh
 ```
 
 ## Testing
@@ -120,8 +120,8 @@ sudo ./deploy.sh
 ```bash
 aws cloudformation create-change-set \
   --stack-name capstone-grupo-2 \
-  --template-body file://api/backend-stack.yaml \
-  --parameters file://api/params.json \
+  --template-body file://backend/backend-stack.yaml \
+  --parameters file://backend/params.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --change-set-name validation-test \
   --change-set-type CREATE
@@ -131,18 +131,11 @@ aws cloudformation create-change-set \
 ```bash
 aws cloudformation create-change-set \
   --stack-name capstone-grupo-2-with-rds \
-  --template-body file://api/backend-stack-with-rds.yaml \
-  --parameters file://api/params-with-rds.json \
+  --template-body file://backend/backend-stack-with-rds.yaml \
+  --parameters file://backend/params-with-rds.json \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --change-set-name validation-test-with-rds \
   --change-set-type CREATE
-```
-
-### Get the estimated cost
-```bash
-aws cloudformation estimate-template-cost \
-  --template-body file://api/backend-stack.yaml \
-  --parameters file://api/params.json
 ```
 
 ## Infrastructure Diagram
@@ -154,11 +147,11 @@ graph TD
     ALB --> ECS[ECS Cluster]
     ECS --> RDSProxy[RDS Proxy]
     ECS --> Lambda[ETL Lambda]
-    Lambda --> SQS[Job Queue]
     Lambda --> RDSProxy
     SQS --> S3[Reports]
     RDSProxy --> Aurora[Aurora PostgreSQL]
     Bastion[Bastion Host] --> RDSProxy
+    Lambda --> SQS[Job Queue]
 ```
 
 ## Monitoring and Maintenance
