@@ -1,8 +1,11 @@
-# AWS Infrastructure as Code Repository
+# 2403VCCO Grupo 2 - Capstone Project
+# Human Rights Incidents Dashboard
 
-This repository contains CloudFormation templates for deploying a scalable, secure AWS infrastructure including ECS, Aurora PostgreSQL, and associated services.
+A full-stack application for tracking and visualizing human rights incidents, built with React and AWS infrastructure.
 
 ## Repository Structure
+
+This repository contains the complete infrastructure and application code for the Human Rights Incidents Dashboard.
 
 ```
 .
@@ -19,124 +22,30 @@ This repository contains CloudFormation templates for deploying a scalable, secu
 └── README.md
 ```
 
-## Infrastructure Components
+## Web Application
 
-### Core Infrastructure
-- VPC with public and private subnets across multiple AZs
-- Internet Gateway and routing configuration
-- Application Load Balancer (ALB) with HTTPS support
-- WAF configuration for ALB protection
-- S3 buckets for ALB logs and API storage
+The web application is built with React and is located in the `web` directory.
 
-### Database
-- Aurora PostgreSQL Serverless v2 (main stack)
-- RDS instance (legacy stack)
-- RDS Proxy for connection pooling
-- Enhanced monitoring and performance insights
-- Automated backups and encryption
+## Backend API
 
-### Compute
-- ECS Cluster with EC2 capacity providers
-- Auto Scaling configuration
-- Spot Instance support (optional)
-- Bastion host for secure access
-- Lambda for ETL process
+The backend API is built with Node.js and is located in the `API` directory.
 
-### Integration
-- SQS queue for job processing
-- SQS deadletter queue for messages that can't be processed successfully
+## ETL Lambda
 
-### Security
-- Security Groups for all components
-- SSL/TLS termination at ALB
-- WAF rules for application protection
-- Private subnets for sensitive resources
-- Secrets management for database credentials
-- SSH key pair for EC2 instances
+The ETL Lambda is built with Python and is located in the `etl-lambda` directory.
+
+## Backend Infrastructure
+
+The backend infrastructure is built with CloudFormation and is located in the `backend` directory.
 
 ## Prerequisites
 
 - AWS CLI installed and configured
 - Appropriate AWS permissions
 - SSL/TLS certificate in AWS Certificate Manager
-
-## Deployment Parameters
-
-Key parameters that need to be configured:
-
-- `MyProjectName`: Name of your project
-- `Environment`: Deployment environment (dev/staging/prod)
-- `MyIPAddress`: Whitelisted IP address for SSH access
-- `CertificateArn`: SSL certificate ARN (if using HTTPS)
-- `RDSInstanceType`: Aurora capacity range (ACUs) or RDS instance type
-- Database credentials:
-  - `MyDatabaseName`
-  - `MyDatabaseUser`
-  - `MyDatabasePassword`
-
-## Deployment Instructions
-
-1. Create a parameters file:
-
-```json
-[
-  {
-    "ParameterKey": "MyProjectName",
-    "ParameterValue": "your-project-name"
-  },
-  // ... other parameters
-]
-```
-
-2. Deploy the stack:
-### Deploy main backend stack
-```bash
-aws cloudformation create-stack \
-  --stack-name your-stack-name \
-  --template-body file://backend/backend-stack.yaml \
-  --parameters file://backend/params.json \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
-```
-
-### Deploy ETL Lambda functions
-
-```bash
-# Make shell files executable
-sudo chmod +x deploy.sh build-layer.sh create-bucket.sh
-
-# Create artifacts and files bucket
-sudo ./etl-lambda/create-bucket.sh
-
-# Build library dependencies for python
-sudo ./etl-lambda/build-layer.sh
-
-# Deploy lambda functions dependencies
-sudo ./etl-lambda/deploy.sh
-```
-
-## Testing
-
-### Create a change set without executing it for Main Stack with Aurora Serverless v2
-```bash
-aws cloudformation create-change-set \
-  --stack-name capstone-grupo-2 \
-  --template-body file://backend/backend-stack.yaml \
-  --parameters file://backend/params.json \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-  --change-set-name validation-test \
-  --change-set-type CREATE
-```
-
-### Main Stack with RDS
-```bash
-aws cloudformation create-change-set \
-  --stack-name capstone-grupo-2-with-rds \
-  --template-body file://backend/backend-stack-with-rds.yaml \
-  --parameters file://backend/params-with-rds.json \
-  --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-  --change-set-name validation-test-with-rds \
-  --change-set-type CREATE
-```
+- Python 3.10 or higher
+- Node.js 18 or higher
+- Docker
 
 ## Infrastructure Diagram
 
@@ -144,7 +53,7 @@ aws cloudformation create-change-set \
 graph TD
     Internet[Internet] --> ALB[Application Load Balancer]
     ALB --> WAF[WAF]
-    ALB --> ECS[ECS Cluster]
+    ALB --> ECS[ECS Cluster (API & WEB)]
     ECS --> RDSProxy[RDS Proxy]
     ECS --> Lambda[ETL Lambda]
     Lambda --> RDSProxy
@@ -154,35 +63,4 @@ graph TD
     Lambda --> SQS[Job Queue]
 ```
 
-## Monitoring and Maintenance
-
-The infrastructure includes:
-- CloudWatch alarms for CPU utilization
-- RDS Enhanced Monitoring
-- Performance Insights for database
-- ALB access logs
-- Container Insights for ECS
-
-## Cost Optimization
-
-- Aurora Serverless v2 for cost-effective database scaling
-- Optional Spot Instance support for ECS
-- S3 lifecycle policies for log management
-- Auto-scaling based on demand
-
-## Security Considerations
-
-1. Database access is restricted to:
-   - ECS tasks through RDS Proxy
-   - Bastion host for administrative access
-
-2. Network security:
-   - Private subnets for sensitive resources
-   - Security groups with minimal access
-   - WAF rules for ALB protection
-
-3. Encryption:
-   - TLS for all external connections
-   - Storage encryption for RDS
-   - S3 bucket encryption
 
