@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, HttpCode, HttpStatus, Get } from '@nestjs/common';
 import { IncidentService } from '../../services/incident.service';
 
 @Controller('incidents')
@@ -13,5 +13,11 @@ export class IncidentsController {
       message: 'Incidents upload URL generated successfully',
       url,
     };
+  }
+
+  @Get('analytics')
+  @HttpCode(HttpStatus.OK)
+  async getIncidentAnalytics() {
+    return this.incidentService.getIncidentAnalytics();
   }
 }

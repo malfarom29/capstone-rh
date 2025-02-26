@@ -28,6 +28,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.4.0",
+    "class-transformer": "^0.5.1",
     "dotenv": "^16.4.7",
     "dotenv-cli": "^8.0.0",
     "reflect-metadata": "^0.2.2",
