@@ -1,5 +1,5 @@
 # 2403VCCO Grupo 2 - Capstone Project
-# Human Rights Incidents Dashboard
+## Human Rights Incidents Dashboard
 
 A full-stack application for tracking and visualizing human rights incidents, built with React and AWS infrastructure.
 
@@ -7,34 +7,19 @@ A full-stack application for tracking and visualizing human rights incidents, bu
 
 This repository contains the complete infrastructure and application code for the Human Rights Incidents Dashboard.
 
-```
-.
-├── backend/
-│   ├── backend-stack.yaml        # Main infrastructure stack with Aurora Serverless v2
-│   ├── backend-stack-with-rds.yaml  # Infrastructure stack with RDS instance
-│   ├── params.json               # Parameters for main infrastructure stack
-│   └── params-with-rds.json      # Parameters for infrastructure stack with RDS instance
-├── etl-lambda/
-│   ├── build-layer.sh            # Script to build Lambda layer
-│   ├── create-bucket.sh          # Script to create S3 buckets
-│   ├── deploy.sh                 # Script to deploy Lambda function
-│   └── template.yml              # ETL Lambda infrastructure
-└── README.md
-```
-
-## Web Application
+### Web Application
 
 The web application is built with React and is located in the `web` directory.
 
-## Backend API
+### Backend API
 
 The backend API is built with Node.js and is located in the `API` directory.
 
-## ETL Lambda
+### ETL Lambda
 
 The ETL Lambda is built with Python and is located in the `etl-lambda` directory.
 
-## Backend Infrastructure
+### Backend Infrastructure
 
 The backend infrastructure is built with CloudFormation and is located in the `backend` directory.
 
@@ -53,7 +38,7 @@ The backend infrastructure is built with CloudFormation and is located in the `b
 graph TD
     Internet[Internet] --> ALB[Application Load Balancer]
     ALB --> WAF[WAF]
-    ALB --> ECS[ECS Cluster (API & WEB)]
+    ALB --> ECS[ECS Cluster API & WEB]
     ECS --> RDSProxy[RDS Proxy]
     ECS --> Lambda[ETL Lambda]
     Lambda --> RDSProxy
