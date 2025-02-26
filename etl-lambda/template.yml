@@ -2,59 +2,59 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Lambda application that runs a ETL process to populate a dashboard.
 Resources:
-  LambdaExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: LambdaExecutionRole
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: LambdaBasicExecution
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
-        - PolicyName: AWSLambda_ReadOnlyAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:ListBucket
-                Resource: ['*']
-        - PolicyName: AWSXrayWriteOnlyAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - xray:PutTraceSegments
-                  - xray:PutTelemetryRecords
-                Resource: ['*']
-        - PolicyName: EC2Permissions
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ec2:DescribeInstances
-                  - ec2:CreateNetworkInterface
-                  - ec2:AttachNetworkInterface
-                  - ec2:DescribeNetworkInterfaces
-                  - autoscaling:CompleteLifecycleAction
-                  - ec2:DeleteNetworkInterface
-                Resource: '*'
+  # LambdaExecutionRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: LambdaExecutionRole
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     Policies:
+  #       - PolicyName: LambdaBasicExecution
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - logs:CreateLogGroup
+  #                 - logs:CreateLogStream
+  #                 - logs:PutLogEvents
+  #               Resource: arn:aws:logs:*:*:*
+  #       - PolicyName: AWSLambda_ReadOnlyAccess
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - s3:GetObject
+  #                 - s3:ListBucket
+  #               Resource: ['*']
+  #       - PolicyName: AWSXrayWriteOnlyAccess
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - xray:PutTraceSegments
+  #                 - xray:PutTelemetryRecords
+  #               Resource: ['*']
+  #       - PolicyName: EC2Permissions
+  #         PolicyDocument:
+  #           Version: '2012-10-17'
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #                 - ec2:DescribeInstances
+  #                 - ec2:CreateNetworkInterface
+  #                 - ec2:AttachNetworkInterface
+  #                 - ec2:DescribeNetworkInterfaces
+  #                 - autoscaling:CompleteLifecycleAction
+  #                 - ec2:DeleteNetworkInterface
+  #               Resource: '*'
 
   S3VPCEndpoint:
     Type: AWS::EC2::VPCEndpoint
@@ -76,7 +76,7 @@ Resources:
       Description: Call the AWS Lambda API
       Timeout: 10
       # Function's execution role
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role: arn:aws:iam::559650263049:role/LabRole
       Tracing: Active
       Layers:
         - !Ref Libs
