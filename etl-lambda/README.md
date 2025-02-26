@@ -6,6 +6,9 @@ This directory contains the AWS Lambda functions and supporting scripts for ETL 
 
 ```
 .
+├── my_funtion
+│   ├── my_function.py # Lambda function code
+│   ├── requirements.txt # Lambda function dependencies
 ├── build-layer.sh            # Builds the Lambda layer
 ├── create-bucket.sh          # Creates S3 buckets
 ├── deploy.sh                 # Deploys the Lambda function
