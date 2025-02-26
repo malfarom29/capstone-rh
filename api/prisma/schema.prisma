@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model IncidentType {
+  id        Int        @id @default(autoincrement())
+  name      String     @map("name")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at")
+  Incident  Incident[]
+
+  @@map("incident_types")
+}
+
+model Country {
+  id        Int      @id @default(autoincrement())
+  name      String   @map("name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  City      City[]
+
+  @@map("countries")
+}
+
+model City {
+  id        Int        @id @default(autoincrement())
+  name      String
+  countryId Int        @map("country_id")
+  country   Country    @relation(fields: [countryId], references: [id])
+  Incident  Incident[]
+
+  @@map("cities")
+}
+
+model Location {
+  id       Int        @id @default(autoincrement())
+  name     String
+  Incident Incident[]
+
+  @@map("locations")
+}
+
+model Incident {
+  id             Int      @id @default(autoincrement())
+  incidentTypeId Int      @map("incident_type_id")
+  cityId         Int      @map("city_id")
+  locationId     Int      @map("location_id")
+  age            Int?
+  gender         String?
+  reportMonth    Int?     @map("report_month")
+  reportYear     Int?     @map("report_year")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  incidentType IncidentType @relation(fields: [incidentTypeId], references: [id])
+  city         City         @relation(fields: [cityId], references: [id])
+  location     Location     @relation(fields: [locationId], references: [id])
+
+  @@map("incidents")
+}
