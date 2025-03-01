@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Lambda application that runs a ETL process to populate a dashboard.
+Resources:
+  S3VPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: com.amazonaws.us-east-1.s3
+      VpcId:
+        Fn::ImportValue: capstone-vpc-id
+      VpcEndpointType: Gateway
+      RouteTableIds:
+      - Fn::ImportValue: capstone-private-rtb-id
+      - Fn::ImportValue: capstone-public-rtb-id
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: capstone-rh-etl-function
+      Handler: my_function.lambda_handler
+      Runtime: python3.11
+      CodeUri: s3://lambda-artifacts-e3ba9154460511cf/453fba2b42963c75168c3b41f6bf5a24
+      Description: Call the AWS Lambda API
+      Timeout: 10
+      Role: arn:aws:iam::559650263049:role/LabRole
+      Tracing: Active
+      Layers:
+      - Ref: Libs
+      VpcConfig:
+        SecurityGroupIds:
+        - Fn::ImportValue: capstone-ecs-security-group-id
+        SubnetIds:
+        - Fn::ImportValue: capstone-private-subnet-1a-id
+        - Fn::ImportValue: capstone-private-subnet-1b-id
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/capstone-rh-etl-function
+      RetentionInDays: 14
+  Libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: capstone-rh-etl-lib
+      Description: Dependencies for the capstone-rh-etl-lib script.
+      ContentUri: s3://lambda-artifacts-e3ba9154460511cf/a819829106977815c38ef66bdc77a425
+      CompatibleRuntimes:
+      - python3.11
+  FunctionTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: default
+      EventPattern:
+        source:
+        - aws.s3
+        detail-type:
+        - Object Created
+      Targets:
+      - Id: FunctionTarget
+        Arn:
+          Fn::GetAtt:
+          - Function
+          - Arn
